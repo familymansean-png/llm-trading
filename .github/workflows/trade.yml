@@ -1,0 +1,47 @@
+name: trading-cycle
+# LLM Trading Study — hourly decision cycle on GitHub Actions.
+# Zero-cost orchestration: free Actions minutes, logs committed to this repo.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"  # every 15 minutes, 24/7 — token budget is covered
+  workflow_dispatch: {}      # manual trigger for testing
+
+concurrency:
+  group: trading
+  cancel-in-progress: false  # never kill a cycle mid-order
+
+permissions:
+  contents: write
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run decision cycle
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python harness/trader.py
+
+      - name: Commit logs
+        if: always()          # log even when the cycle errors
+        run: |
+          git config user.name "trade-bot"
+          git config user.email "trade-bot@users.noreply.github.com"
+          git add logs/
+          git diff --cached --quiet && exit 0
+          git commit -m "cycle $(date -u +%Y-%m-%dT%H:%M)"
+          git pull --rebase origin main
+          git push
