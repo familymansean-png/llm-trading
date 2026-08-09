@@ -1,0 +1,11 @@
+{
+  "study_start_utc": "2026-08-09T19:51:35Z",
+  "study_capital_usd": 10000,
+  "benchmarks": {
+    "SPY_buy_hold_ref": 773.26,
+    "BTC_buy_hold_ref": 65098.4,
+    "50_50_SPY_BTC": "computed from the two refs",
+    "SPY_ref_note": "last close 2026-08-07 (market closed at study start)"
+  },
+  "note": "Do-nothing benchmarks captured at study start; compare account equity vs these over the same window."
+}
