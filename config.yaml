@@ -1,0 +1,42 @@
+# LLM Trading Study — harness configuration
+# Study design: two legs, one account, paper mode until promoted.
+
+account:
+  mode: paper                     # paper | live  (live requires explicit manual change)
+  study_capital: 10000            # harness sizes trades off min(equity, study_capital)
+
+legs:
+  aggressive:
+    market: crypto                # 24/7, no PDT rule
+    capital_fraction: 0.65        # v3: committee shifted weight to crypto
+    symbols: ["BTC/USD", "ETH/USD", "SOL/USD", "LINK/USD", "AVAX/USD", "DOGE/USD"]
+    objective: "Momentum trades with 1:3 risk:reward; stop ~2.5%, TP 7.5-10%, trailing after +4%"
+    max_position_pct: 0.35        # v3: fewer, larger, higher-conviction positions
+    max_trade_pct: 0.25
+    daily_loss_halt_pct: 0.04
+  long:
+    market: equities
+    capital_fraction: 0.35
+    symbols: ["SPY", "QQQ", "VTI", "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "JNJ", "XLV", "XLE", "TLT", "GLD", "TQQQ", "MSTR"]
+    objective: "Swing-trade momentum leaders; let winners run; >=25h holds to preserve PDT capacity"
+    max_position_pct: 0.40
+    max_trade_pct: 0.25
+    daily_loss_halt_pct: 0.03
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-5        # cost-efficient tier; swap via config, never edit prompt mid-study
+  max_tokens: 2500
+  prompt_version: v3              # bump ONLY with a new file in prompts/ — frozen artifact per version
+                                  # v1 launch; v2 structured TP/stop (audit); v3 asymmetric 1:3 R:R + 65/35 (committee)
+
+risk:
+  allow_shorting: false
+  allow_margin: false
+  order_type: market              # market | limit
+  max_orders_per_run: 4
+
+history:
+  bars_lookback_days: 30          # daily bars provided to the model
+  intraday_bars_hours: 24         # hourly bars provided to the model
+  recent_decisions_shown: 10      # prior decisions injected for continuity
