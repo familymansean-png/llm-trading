@@ -1,10 +1,4 @@
 {
-  "ETHUSD": {
-    "stop": 1873.91,
-    "tp": 2075.72,
-    "leg": "aggressive",
-    "peak": 1927.015
-  },
   "SOLUSD": {
     "stop": 75.35,
     "tp": 83.46,
