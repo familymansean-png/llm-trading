@@ -10,5 +10,11 @@
     "tp": 83.46,
     "leg": "aggressive",
     "peak": 77.28
+  },
+  "TQQQ": {
+    "stop": 69.91,
+    "tp": null,
+    "leg": "long",
+    "peak": null
   }
 }
