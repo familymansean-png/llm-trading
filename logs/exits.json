@@ -1,1 +1,8 @@
-{}
+{
+  "LINKUSD": {
+    "stop": 8.45,
+    "tp": 9.32,
+    "leg": "aggressive",
+    "peak": null
+  }
+}
