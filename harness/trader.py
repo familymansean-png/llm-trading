@@ -10,6 +10,11 @@ v2 changes (from cross-model audit 2026-08-09, GPT-4o + Gemini + Claude):
 - State now includes open orders and live bid/ask quotes.
 - Bars are compressed to closing-price strings (cuts token cost ~70%).
 
+v4 changes (2026-08-15, owner-authorized):
+- Trailing stops now apply to BOTH legs, with per-leg activate/gap params read
+  from config (legs.<leg>.trailing); v3 constants remain the fallback.
+- State includes week_to_date_pnl and weekly_target_usd for pace discipline.
+
 Usage:
     python harness/trader.py            # real cycle (needs .env keys)
     python harness/trader.py --mock     # plumbing test, no keys, no orders
@@ -321,12 +326,17 @@ def place_order(cfg, state, d, mock=False):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
-TRAIL_ACTIVATE = 1.04   # trailing kicks in at +4% over entry (v3, committee)
-TRAIL_GAP = 0.98        # then stop ratchets to peak - 2%
+TRAIL_ACTIVATE = 1.04   # default: trailing kicks in at +4% over entry (v3, committee)
+TRAIL_GAP = 0.98        # default: stop ratchets to peak - 2%
+
+def trail_params(cfg, leg):
+    """Per-leg trailing overrides from config (v4); falls back to v3 defaults."""
+    t = cfg["legs"].get(leg, {}).get("trailing") or {}
+    return 1 + t.get("activate_pct", TRAIL_ACTIVATE - 1), 1 - t.get("gap_pct", 1 - TRAIL_GAP)
 
 def enforce_stops(cfg, state):
-    """Cycle-start exit enforcement: hard stops, trailing stops (aggressive
-    leg), and registry-based TPs for stocks. Mutates state so the model sees
+    """Cycle-start exit enforcement: hard stops, trailing stops (per-leg
+    params), and registry-based TPs for stocks. Mutates state so the model sees
     the post-exit book. Returns exit records."""
     from alpaca.trading.requests import GetOrdersRequest
     from alpaca.trading.enums import QueryOrderStatus
@@ -364,8 +374,9 @@ def enforce_stops(cfg, state):
         peak = max(plan.get("peak") or entry, bid)
         plan["peak"] = peak
         leg = plan.get("leg", "aggressive" if is_crypto else "long")
-        if leg == "aggressive" and bid >= entry * TRAIL_ACTIVATE:
-            new_stop = rnd_price(peak * TRAIL_GAP)
+        act, gap = trail_params(cfg, leg)   # v4: trailing on BOTH legs, per-leg params
+        if bid >= entry * act:
+            new_stop = rnd_price(peak * gap)
             if new_stop > plan["stop"]:
                 plan["stop"] = new_stop   # ratchet only, never loosens
         if bid <= plan["stop"]:
@@ -389,6 +400,21 @@ def main():
     state = gather_state_mock(cfg) if args.mock else gather_state_alpaca(cfg)
     pfx = "mock_" if args.mock else ""   # mock runs never touch the research logs
     stop_exits = [] if args.mock else enforce_stops(cfg, state)
+
+    # v4: weekly pace context — equity at the start of the current ISO week
+    try:
+        cur_week = datetime.fromisoformat(state["timestamp"]).isocalendar()[:2]
+        week_start_eq = None
+        with open(ROOT / "logs" / "equity.jsonl") as f:
+            for line in f:
+                rec = json.loads(line)
+                if datetime.fromisoformat(rec["t"]).isocalendar()[:2] == cur_week:
+                    week_start_eq = rec["equity"]; break
+        if week_start_eq is not None:
+            state["week_to_date_pnl"] = round(state["account"]["equity"] - week_start_eq, 2)
+        state["weekly_target_usd"] = cfg.get("weekly", {}).get("target_usd")
+    except Exception:
+        pass   # pace context is best-effort; never blocks a cycle
 
     append_jsonl(pfx + "equity.jsonl", {"t": state["timestamp"], "equity": state["account"]["equity"],
                                   "cash": state["account"]["cash"],
