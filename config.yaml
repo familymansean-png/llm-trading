@@ -1,34 +1,42 @@
 # LLM Trading Study — harness configuration
 # Study design: two legs, one account, paper mode until promoted.
+# v4 (2026-08-15): objective reframed to sustainable weekly net P&L
+# (goal metric: capital required for $2k/week). study_capital raised to the
+# full paper balance to measure the weekly rate at target scale. Allocation
+# flipped 75/25 toward equities per 2-year backtest (crypto skeleton negative
+# across the entire parameter grid; equities skeleton +0.6-0.7%/wk at -13% DD).
 
 account:
   mode: paper                     # paper | live  (live requires explicit manual change)
-  study_capital: 10000            # harness sizes trades off min(equity, study_capital)
+  study_capital: 100000           # v4: full paper balance — test at target scale
 
 legs:
   aggressive:
     market: crypto                # 24/7, no PDT rule
-    capital_fraction: 0.65        # v3: committee shifted weight to crypto
+    capital_fraction: 0.25        # v4: shrunk from 0.65 — leg must prove discretionary edge
     symbols: ["BTC/USD", "ETH/USD", "SOL/USD", "LINK/USD", "AVAX/USD", "DOGE/USD"]
-    objective: "Momentum trades with 1:3 risk:reward; stop ~2.5%, TP 7.5-10%, trailing after +4%"
-    max_position_pct: 0.35        # v3: fewer, larger, higher-conviction positions
+    objective: "Default 100% cash; rare high-conviction momentum entries, 1:3 R:R minimum, max one new entry/day"
+    max_position_pct: 0.35
     max_trade_pct: 0.25
     daily_loss_halt_pct: 0.04
+    trailing: { activate_pct: 0.06, gap_pct: 0.02 }   # v4: backtested least-loss params
   long:
     market: equities
-    capital_fraction: 0.35
+    capital_fraction: 0.75        # v4: the engine — backtest +0.6-0.7%/wk at -13% max DD
     symbols: ["SPY", "QQQ", "VTI", "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "JNJ", "XLV", "XLE", "TLT", "GLD", "TQQQ", "MSTR"]
-    objective: "Swing-trade momentum leaders; let winners run; >=25h holds to preserve PDT capacity"
-    max_position_pct: 0.40
+    objective: "Momentum leaders >=6% over 20d and above 20d SMA, SPY>50d regime gate, 8% stops, harness-trailed winners"
+    max_position_pct: 0.35
     max_trade_pct: 0.25
     daily_loss_halt_pct: 0.03
+    trailing: { activate_pct: 0.06, gap_pct: 0.05 }   # v4: wide trail lets equity winners run
 
 llm:
   provider: anthropic
   model: claude-sonnet-4-5        # cost-efficient tier; swap via config, never edit prompt mid-study
   max_tokens: 2500
-  prompt_version: v3              # bump ONLY with a new file in prompts/ — frozen artifact per version
+  prompt_version: v4              # bump ONLY with a new file in prompts/ — frozen artifact per version
                                   # v1 launch; v2 structured TP/stop (audit); v3 asymmetric 1:3 R:R + 65/35 (committee)
+                                  # v4 weekly-rate objective, 75/25 flip, mechanical-only exits (backtest + owner)
 
 risk:
   allow_shorting: false
@@ -40,3 +48,6 @@ history:
   bars_lookback_days: 30          # daily bars provided to the model
   intraday_bars_hours: 24         # hourly bars provided to the model
   recent_decisions_shown: 10      # prior decisions injected for continuity
+
+weekly:
+  target_usd: 2000                # reporting/pace target injected into state as weekly_target_usd
