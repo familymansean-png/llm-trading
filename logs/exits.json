@@ -1,10 +1,4 @@
 {
-  "LINKUSD": {
-    "stop": 9.506,
-    "tp": 9.32,
-    "leg": "aggressive",
-    "peak": 9.7
-  },
   "TQQQ": {
     "stop": 75.76,
     "tp": null,
