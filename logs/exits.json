@@ -1,1 +1,8 @@
-{}
+{
+  "XLE": {
+    "stop": 58.43,
+    "tp": null,
+    "leg": "long",
+    "peak": null
+  }
+}
