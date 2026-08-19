@@ -10,5 +10,11 @@
     "tp": null,
     "leg": "long",
     "peak": 176.05
+  },
+  "BTCUSD": {
+    "stop": 66700,
+    "tp": 71500,
+    "leg": "aggressive",
+    "peak": null
   }
 }
