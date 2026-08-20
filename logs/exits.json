@@ -12,9 +12,9 @@
     "peak": 176.05
   },
   "BTCUSD": {
-    "stop": 71344.0,
+    "stop": 71351.5,
     "tp": 71500,
     "leg": "aggressive",
-    "peak": 72800.0
+    "peak": 72807.65
   }
 }
