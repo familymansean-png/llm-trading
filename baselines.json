@@ -7,5 +7,25 @@
     "50_50_SPY_BTC": "computed from the two refs",
     "SPY_ref_note": "last close 2026-08-07 (market closed at study start)"
   },
-  "note": "Do-nothing benchmarks captured at study start; compare account equity vs these over the same window."
+  "note": "Do-nothing benchmarks captured at study start; compare account equity vs these over the same window.",
+  "universe_ew_benchmark": {
+    "note": "Equal-weight buy-and-hold of the long leg's own 15-symbol universe, captured at study start (raw closes 2026-08-07). This is the fair benchmark for the long leg: the 2026-08-22 strategy-validation study found ~85% of the 20d-momentum rule's backtested OOS gains came from universe composition (NVDA/TQQQ/MSTR), and EW of the same universe beat the rule risk-adjusted (Sharpe 1.85 vs 1.27). EW return = mean over symbols of (current_price/ref - 1).",
+    "refs": {
+      "SPY": 773.26,
+      "QQQ": 723.03,
+      "VTI": 381.78,
+      "AAPL": 313.33,
+      "MSFT": 499.99,
+      "NVDA": 223.96,
+      "GOOGL": 354.3,
+      "AMZN": 274.48,
+      "JNJ": 259.24,
+      "XLV": 165.68,
+      "XLE": 57.5,
+      "TLT": 82.76,
+      "GLD": 398.47,
+      "TQQQ": 74.47,
+      "MSTR": 100.01
+    }
+  }
 }
