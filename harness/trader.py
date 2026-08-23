@@ -229,6 +229,17 @@ def validate(cfg, state, d):
     if d["symbol"] not in legcfg["symbols"]:
         return False, f"{d['symbol']} not on {d['leg']} whitelist"
     if d["action"] == "buy":
+        # Traffic-collapse screen (docs/research/2026-08-23-traffic-signal-study.md):
+        # no NEW long entries in names whose organic search traffic is down >=30% YoY.
+        # Fail-open: a missing or unreadable screen file never blocks trading.
+        if d["leg"] == "long":
+            try:
+                scr = json.loads((ROOT / "data" / "traffic_screen.json").read_text())
+                if d["symbol"] in scr.get("blocked", []):
+                    return False, (f"traffic-collapse screen blocks {d['symbol']} "
+                                   f"(organic traffic <=-30% YoY, asof {scr.get('asof')})")
+            except Exception:
+                pass
         eq = leg_equity(cfg, state, d["leg"])
         if not d.get("notional_usd") or d["notional_usd"] <= 0:
             return False, "buy without positive notional"
