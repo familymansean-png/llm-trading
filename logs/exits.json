@@ -10,5 +10,11 @@
     "tp": null,
     "leg": "long",
     "peak": 176.05
+  },
+  "LINKUSD": {
+    "stop": 13.09,
+    "tp": 14.33,
+    "leg": "aggressive",
+    "peak": null
   }
 }
