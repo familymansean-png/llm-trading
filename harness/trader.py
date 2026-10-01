@@ -182,6 +182,21 @@ def leg_equity(cfg, state, leg):
     base = min(state["account"]["equity"], cfg["account"].get("study_capital", state["account"]["equity"]))
     return base * cfg["legs"][leg]["capital_fraction"]
 
+def ask_llm_retry(cfg, prompt, state, mock=False, attempts=3):
+    """Retry wrapper for ask_llm. Transient API errors (rate limits, timeouts,
+    malformed JSON) get retried with backoff; the final failure propagates to
+    main(), which logs an error record to decisions.jsonl instead of dying
+    silently (2026-09-20..10-01: 11 days of cycles logged equity but no
+    decisions because ask_llm failures were swallowed by the workflow)."""
+    for i in range(attempts):
+        try:
+            return ask_llm(cfg, prompt, state, mock=mock)
+        except Exception:
+            if i == attempts - 1:
+                raise
+            time.sleep(30 * (i + 1))
+
+
 def ask_llm(cfg, prompt, state, mock=False):
     if mock:
         return {"market_view": "Mock cycle.",
@@ -431,7 +446,19 @@ def main():
                                   "cash": state["account"]["cash"],
                                   "positions": len(state["positions"])})
 
-    decision = ask_llm(cfg, prompt, state, mock=args.mock)
+    try:
+        decision = ask_llm_retry(cfg, prompt, state, mock=args.mock)
+    except Exception as e:
+        # Never fail silently: an LLM outage must be visible in the decision
+        # log itself, so freshness checks (daily report) catch it within 24h.
+        record = {"t": state["timestamp"], "prompt_version": cfg["llm"]["prompt_version"],
+                  "model": cfg["llm"]["model"], "mode": "mock" if args.mock else cfg["account"]["mode"],
+                  "harness_stop_exits": stop_exits,
+                  "error": f"ask_llm failed after retries: {type(e).__name__}: {e}",
+                  "market_view": None, "results": []}
+        append_jsonl(pfx + "decisions.jsonl", record)
+        print(json.dumps(record, indent=2))
+        sys.exit(1)
 
     results, orders_placed = [], 0
     for d in decision.get("decisions", []):
