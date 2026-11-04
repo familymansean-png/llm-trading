@@ -3,18 +3,18 @@
     "stop": 325.0,
     "tp": null,
     "leg": "long",
-    "peak": null
+    "peak": 353.55
   },
   "AMZN": {
     "stop": 248.0,
     "tp": null,
     "leg": "long",
-    "peak": null
+    "peak": 270.26
   },
   "BTCUSD": {
     "stop": 78700,
     "tp": 86500,
     "leg": "aggressive",
-    "peak": null
+    "peak": 80817.250419885
   }
 }
